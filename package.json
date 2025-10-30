@@ -1,6 +1,6 @@
 {
   "name": "@exode-team/router.tsx",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "jsnext:main": "src/index.ts",
