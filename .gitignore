@@ -106,7 +106,6 @@ dist/
 # Intellij
 .idea/
 
-yarn.lock
 package-lock.json
 .editorconfig
 docs/
