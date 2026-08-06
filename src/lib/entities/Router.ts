@@ -49,6 +49,7 @@ export class Router extends EventEmitter<{
     private readonly infinityPanelCacheInstance: Map<string, string[]> = new Map<string, string[]>();
     private readonly useHash: boolean = false;
     private readonly notFoundRoute: string = '/404';
+    private readonly keepNotFoundLocation: boolean = false;
 
     /**
      *
@@ -95,6 +96,9 @@ export class Router extends EventEmitter<{
             }
             if (routerConfig.notFoundRoute !== undefined) {
                 this.notFoundRoute = routerConfig.notFoundRoute;
+            }
+            if (routerConfig.keepNotFoundLocation !== undefined) {
+                this.keepNotFoundLocation = routerConfig.keepNotFoundLocation;
             }
         }
     }
@@ -544,9 +548,15 @@ export class Router extends EventEmitter<{
 
     private getNotFoundRoute(location: string, params: PageParams) {
         try {
-            return this.makeMyRoute(
+            const route = this.makeMyRoute(
                 this.notFoundRoute + `?location=${location}&params=${qs.stringify(params)}`
             );
+
+            if (this.keepNotFoundLocation) {
+                route.originalLocation = location;
+            }
+
+            return route;
         } catch (e: any) {
             if (e && e.message === 'ROUTE_NOT_FOUND') {
                 return new MyRoute(

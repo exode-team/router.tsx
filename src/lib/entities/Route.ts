@@ -27,6 +27,8 @@ export class Route {
     pageId: string;
     params: PageParams = {};
     uniqId: number;
+    /** Исходный location ненайденной страницы (в адресной строке остается он, а не notFoundRoute) */
+    originalLocation?: string;
 
     constructor(structure: Page, pageId: string, params: PageParams) {
         this.structure = structure;
@@ -92,11 +94,12 @@ export class Route {
     clone(): Route {
         const copy = new Route(this.structure.clone(), this.pageId, {...this.params});
         copy.uniqId = this.uniqId;
+        copy.originalLocation = this.originalLocation;
         return copy;
     }
 
     getLocation() {
-        return generatePath(this.pageId, this.params);
+        return this.originalLocation ?? generatePath(this.pageId, this.params);
     }
 
     getPageId() {

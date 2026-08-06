@@ -3,6 +3,8 @@ export interface RouterConfig {
     useHash: boolean;
     /** Путь к 404 странице */
     notFoundRoute: string;
+    /** Не переписывать URL на notFoundRoute — в адресной строке остается исходный location */
+    keepNotFoundLocation?: boolean;
     /** Логи для отладки переходов */
     enableLogging?: boolean;
     defaultPage?: string;
