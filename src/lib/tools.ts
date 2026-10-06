@@ -6,9 +6,9 @@
 /**
  * @ignore
  */
-export function preventBlinkingBySettingScrollRestoration() {
-    if ('scrollRestoration' in window.history && window.history.scrollRestoration === 'auto') {
-        window.history.scrollRestoration = 'manual';
+export function setScrollRestoration(mode: 'auto' | 'manual') {
+    if ('scrollRestoration' in window.history && window.history.scrollRestoration !== mode) {
+        window.history.scrollRestoration = mode;
     }
 }
 

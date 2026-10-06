@@ -5,7 +5,7 @@ import { EventEmitter } from 'tsee';
 import { Page } from './Page';
 import { History, UpdateEventType } from './History';
 import { MODAL_KEY, POPUP_KEY, Route as MyRoute } from './Route';
-import { preventBlinkingBySettingScrollRestoration } from '../tools';
+import { setScrollRestoration } from '../tools';
 import { State, stateFromLocation } from './State';
 
 import { PAGE_MAIN, PANEL_MAIN, VIEW_MAIN } from '../const';
@@ -50,6 +50,7 @@ export class Router extends EventEmitter<{
     private readonly useHash: boolean = false;
     private readonly notFoundRoute: string = '/404';
     private readonly keepNotFoundLocation: boolean = false;
+    private readonly scrollRestoration: 'auto' | 'manual' = 'manual';
 
     /**
      *
@@ -99,6 +100,9 @@ export class Router extends EventEmitter<{
             }
             if (routerConfig.keepNotFoundLocation !== undefined) {
                 this.keepNotFoundLocation = routerConfig.keepNotFoundLocation;
+            }
+            if (routerConfig.scrollRestoration !== undefined) {
+                this.scrollRestoration = routerConfig.scrollRestoration;
             }
         }
     }
@@ -610,7 +614,7 @@ export class Router extends EventEmitter<{
         state.blank = 0;
         const updateEvent = this.history.replace(nextRoute, state);
         window.history.replaceState(state, `page=${state.index}`, (this.useHash ? '#' : '') + nextRoute.getLocation());
-        preventBlinkingBySettingScrollRestoration();
+        setScrollRestoration(this.scrollRestoration);
 
         this.emit('update', ...updateEvent);
     }
@@ -622,7 +626,7 @@ export class Router extends EventEmitter<{
         let updateEvent = this.history.push(nextRoute, state);
         state.index = this.history.getCurrentIndex();
         window.history.pushState(state, `page=${state.index}`, (this.useHash ? '#' : '') + nextRoute.getLocation());
-        preventBlinkingBySettingScrollRestoration();
+        setScrollRestoration(this.scrollRestoration);
 
         this.emit('update', ...updateEvent);
     }

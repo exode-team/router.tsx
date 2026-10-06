@@ -7,6 +7,13 @@ export interface RouterConfig {
     keepNotFoundLocation?: boolean;
     /** Логи для отладки переходов */
     enableLogging?: boolean;
+    /**
+     * history.scrollRestoration после каждого перехода. По умолчанию 'manual': браузер
+     * не восстанавливает скролл сам и не дергает страницу раньше, чем отрисуется панель.
+     * 'auto' нужен WKWebView (iOS): свайп «назад» показывает снимок прокрученной страницы,
+     * только если запись истории восстанавливает скролл сама — иначе вместо нее пустой экран
+     */
+    scrollRestoration?: 'auto' | 'manual';
     defaultPage?: string;
     defaultView?: string;
     defaultPanel?: string;
