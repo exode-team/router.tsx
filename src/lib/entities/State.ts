@@ -18,8 +18,6 @@ export interface State {
     first: 0 | 1;
     /** Параметры страницы под оверлеем записи (Route.pageParams): переживают перезагрузку вместе с записью */
     pageParams?: PageParams;
-    /** Экземпляр оверлея записи (Route.overlayKey) */
-    overlayKey?: string;
 }
 
 let randomIdForCheckState = `${Math.random() * 2000000}.${Date.now()}`;

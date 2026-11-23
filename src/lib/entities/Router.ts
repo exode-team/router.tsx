@@ -19,12 +19,6 @@ import { matchPath } from '../workWithPathRegexp';
 export declare type RouteList = { [key: string]: Page };
 
 export declare type ReplaceUnknownRouteFn = (newRoute: MyRoute, oldRoute?: MyRoute) => MyRoute;
-
-/**
- * Счетчик экземпляров оверлеев (Route.overlayKey) в пределах загрузки страницы
- */
-let overlayKeyCounter = 1;
-
 /**
  * @ignore
  */
@@ -222,7 +216,7 @@ export class Router extends EventEmitter<{
 
         let enterEvent: [ MyRoute, MyRoute | undefined ] | null = null;
         this.startHistoryOffset = window.history.length;
-        let nextRoute = this.restoreOverlayState(this.createRouteFromLocationWithReplace());
+        let nextRoute = this.restorePageParams(this.createRouteFromLocationWithReplace());
         const state = stateFromLocation(this.history.getCurrentIndex());
         state.first = 1;
 
@@ -298,7 +292,7 @@ export class Router extends EventEmitter<{
         this.log(`pushPage ${pageId}`, params);
         Router.checkParams(params);
         let currentRoute = this.getCurrentRouteOrDef();
-        let nextRoute = this.keepOverlayState(currentRoute, MyRoute.fromPageId(this.routes, pageId, params));
+        let nextRoute = this.keepPageParams(currentRoute, MyRoute.fromPageId(this.routes, pageId, params));
         const s = { ...this.getCurrentStateOrDef() };
         if (currentRoute.getViewId() === nextRoute.getViewId()) {
             s.history = s.history.concat([ nextRoute.getPanelId() ]);
@@ -316,7 +310,7 @@ export class Router extends EventEmitter<{
     replacePage(pageId: string, params: PageParams = {}) {
         this.log(`replacePage ${pageId}`, params);
         let currentRoute = this.getCurrentRouteOrDef();
-        let nextRoute = this.keepOverlayState(currentRoute, MyRoute.fromPageId(this.routes, pageId, params));
+        let nextRoute = this.keepPageParams(currentRoute, MyRoute.fromPageId(this.routes, pageId, params));
         const s = { ...this.getCurrentStateOrDef() };
         if (currentRoute.getViewId() === nextRoute.getViewId()) {
             s.history = s.history.concat([]);
@@ -547,13 +541,12 @@ export class Router extends EventEmitter<{
     /**
      * Маршрут модалки или попапа поверх текущего: запоминает параметры страницы под ним (pageParams)
      * @Note: модалка поверх модалки получает параметры страницы, а не прошлой модалки — иначе в новую
-     * модалку утекают чужие параметры (id записи, вкладка); попап видит параметры модалки, она остается под ним.
-     * Модалка — новый экземпляр окна (overlayKey), даже та же поверх себя; попап остается в экземпляре модалки
-     * @param overlayType
+     * модалку утекают чужие параметры (id записи, вкладка); попап видит параметры модалки, она остается под ним
+     * @param overlayKey
      * @param overlayId
      * @param params
      */
-    private createOverlayRoute(overlayType: typeof MODAL_KEY | typeof POPUP_KEY, overlayId: string, params: PageParams) {
+    private createOverlayRoute(overlayKey: typeof MODAL_KEY | typeof POPUP_KEY, overlayId: string, params: PageParams) {
         const currentRoute = this.getCurrentRouteOrDef();
         const nextRoute = currentRoute.clone();
 
@@ -561,51 +554,38 @@ export class Router extends EventEmitter<{
             nextRoute.pageParams = { ...currentRoute.params };
         }
 
-        if (overlayType === MODAL_KEY && currentRoute.isModal() && nextRoute.pageParams) {
+        if (overlayKey === MODAL_KEY && currentRoute.isModal() && nextRoute.pageParams) {
             nextRoute.params = { ...nextRoute.pageParams };
         }
 
-        if (overlayType === MODAL_KEY) {
-            nextRoute.overlayKey = `${Date.now().toString(36)}.${overlayKeyCounter++}`;
-        }
-
-        nextRoute.params[overlayType] = overlayId;
+        nextRoute.params[overlayKey] = overlayId;
 
         return nextRoute.setParams(params);
     }
 
     /**
      * Та же страница с оверлеем в параметрах (Router.updateParams проекта, mui-диалог через pushPage):
-     * оверлей остается тем же экземпляром, параметры страницы под ним не меняются
+     * оверлей остается, параметры страницы под ним не меняются
      * @param currentRoute
      * @param nextRoute
      */
-    private keepOverlayState(currentRoute: MyRoute, nextRoute: MyRoute) {
+    private keepPageParams(currentRoute: MyRoute, nextRoute: MyRoute) {
         if (nextRoute.hasOverlay() && currentRoute.hasOverlay() && currentRoute.pageId === nextRoute.pageId) {
             nextRoute.pageParams = currentRoute.pageParams && { ...currentRoute.pageParams };
-            nextRoute.overlayKey = currentRoute.overlayKey;
         }
 
         return nextRoute;
     }
 
     /**
-     * Параметры страницы и экземпляр оверлея из записи истории браузера (после перезагрузки маршрут строится из адреса)
+     * Параметры страницы под оверлеем из записи истории браузера (после перезагрузки маршрут строится из адреса)
      * @param route
      */
-    private restoreOverlayState(route: MyRoute) {
-        const { pageParams, overlayKey } = window.history.state || {};
+    private restorePageParams(route: MyRoute) {
+        const pageParams = window.history.state?.pageParams;
 
-        if (!route.hasOverlay()) {
-            return route;
-        }
-
-        if (pageParams && typeof pageParams === 'object') {
+        if (route.hasOverlay() && pageParams && typeof pageParams === 'object') {
             route.pageParams = { ...pageParams };
-        }
-
-        if (typeof overlayKey === 'string') {
-            route.overlayKey = overlayKey;
         }
 
         return route;
@@ -648,7 +628,7 @@ export class Router extends EventEmitter<{
     }
 
     private readonly onPopState = () => {
-        let nextRoute = this.restoreOverlayState(this.createRouteFromLocationWithReplace());
+        let nextRoute = this.restorePageParams(this.createRouteFromLocationWithReplace());
         const state = stateFromLocation(this.history.getCurrentIndex());
         let enterEvent: [ MyRoute, MyRoute | undefined ] | null = null;
         let updateEvent: UpdateEventType | null = null;
@@ -659,7 +639,6 @@ export class Router extends EventEmitter<{
             state.index = this.history.getCurrentIndex();
             state.history = [ nextRoute.getPanelId() ];
             state.pageParams = nextRoute.pageParams;
-            state.overlayKey = nextRoute.overlayKey;
             enterEvent = [ nextRoute, this.history.getCurrentRoute() ];
             updateEvent = this.history.push(nextRoute, state);
             window.history.replaceState(state, `page=${state.index}`, (this.useHash ? '#' : '') + nextRoute.getLocation());
@@ -689,7 +668,6 @@ export class Router extends EventEmitter<{
         state.index = this.history.getCurrentIndex();
         state.blank = 0;
         state.pageParams = nextRoute.pageParams;
-        state.overlayKey = nextRoute.overlayKey;
         const updateEvent = this.history.replace(nextRoute, state);
         window.history.replaceState(state, `page=${state.index}`, (this.useHash ? '#' : '') + nextRoute.getLocation());
         setScrollRestoration(this.scrollRestoration);
@@ -702,7 +680,6 @@ export class Router extends EventEmitter<{
         state.blank = 0;
         state.first = 0;
         state.pageParams = nextRoute.pageParams;
-        state.overlayKey = nextRoute.overlayKey;
         let updateEvent = this.history.push(nextRoute, state);
         state.index = this.history.getCurrentIndex();
         window.history.pushState(state, `page=${state.index}`, (this.useHash ? '#' : '') + nextRoute.getLocation());
