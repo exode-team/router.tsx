@@ -31,6 +31,8 @@ export class Route {
     originalLocation?: string;
     /** Параметры страницы под модалкой или попапом (без их параметров): известны, если оверлей открыл роутер */
     pageParams?: PageParams;
+    /** Экземпляр модалки: новый на каждый pushModal/replaceModal, общий для замен адреса и попапов поверх нее */
+    overlayKey?: string;
 
     constructor(structure: Page, pageId: string, params: PageParams) {
         this.structure = structure;
@@ -98,6 +100,7 @@ export class Route {
         copy.uniqId = this.uniqId;
         copy.originalLocation = this.originalLocation;
         copy.pageParams = this.pageParams && {...this.pageParams};
+        copy.overlayKey = this.overlayKey;
         return copy;
     }
 

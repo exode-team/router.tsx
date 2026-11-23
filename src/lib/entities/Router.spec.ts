@@ -207,3 +207,94 @@ describe('history entries', () => {
         expect(query()).toEqual({filter: 'a', modal: 'user', userId: '2'});
     });
 });
+
+describe('modal instance (overlayKey)', () => {
+    const key = () => router.getCurrentLocation().route.overlayKey;
+
+    test('every pushModal is a new instance, the same modal over itself too', () => {
+        open('/users?filter=a');
+
+        expect(key()).toBeUndefined();
+
+        router.pushModal('user', {userId: '1'});
+        const first = key();
+        router.pushModal('user', {userId: '2'});
+
+        expect(first).toBeTruthy();
+        expect(key()).toBeTruthy();
+        expect(key()).not.toBe(first);
+    });
+
+    test('a replace of the address, a popup and a mui dialog keep the instance of the modal', () => {
+        open('/users?filter=a');
+        router.pushModal('user', {userId: '1'});
+        const instance = key();
+
+        updateParams({accessId: '10'});
+
+        expect(key()).toBe(instance);
+
+        router.pushPopup('actions', {itemId: '3'});
+
+        expect(key()).toBe(instance);
+
+        const nodeEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'production';
+        router.pushPage(PAGE_USERS, {...router.getCurrentLocation().getParams(), muiDialog: 'true'});
+        process.env.NODE_ENV = nodeEnv;
+
+        expect(key()).toBe(instance);
+    });
+
+    test('replaceModal is a new instance', () => {
+        open('/users?filter=a');
+        router.pushModal('user', {userId: '1'});
+        const instance = key();
+        router.replaceModal('user', {userId: '2'});
+
+        expect(key()).not.toBe(instance);
+    });
+
+    test('back and forward return the instance of their entry', async () => {
+        open('/users?filter=a');
+        router.pushModal('user', {userId: '1'});
+        const first = key();
+        router.pushModal('user', {userId: '2'});
+        const second = key();
+        window.history.back();
+        await tick();
+
+        expect(key()).toBe(first);
+
+        window.history.forward();
+        await tick();
+
+        expect(key()).toBe(second);
+    });
+
+    test('the instance survives a reload, and the browser back after it', async () => {
+        open('/users?filter=a');
+        router.pushModal('user', {userId: '1'});
+        const first = key();
+        router.pushModal('user', {userId: '2'});
+        const second = key();
+        reload();
+
+        expect(key()).toBe(second);
+
+        window.history.back();
+        await tick();
+
+        expect(key()).toBe(first);
+    });
+
+    test('closing the modal leaves no instance on the page', async () => {
+        open('/users?filter=a');
+        router.pushModal('user', {userId: '1'});
+        router.popPage();
+        await tick();
+
+        expect(key()).toBeUndefined();
+        expect(window.history.state.overlayKey).toBeUndefined();
+    });
+});
