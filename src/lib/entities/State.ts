@@ -3,6 +3,8 @@
  * @packageDocumentation
  */
 
+import {PageParams} from './Types';
+
 /**
  * @ignore
  */
@@ -14,6 +16,8 @@ export interface State {
     index: number; // ourIndex;
     blank: 0 | 1;
     first: 0 | 1;
+    /** Параметры страницы под оверлеем записи (Route.pageParams): переживают перезагрузку вместе с записью */
+    pageParams?: PageParams;
 }
 
 let randomIdForCheckState = `${Math.random() * 2000000}.${Date.now()}`;
