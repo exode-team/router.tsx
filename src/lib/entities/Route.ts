@@ -29,6 +29,8 @@ export class Route {
     uniqId: number;
     /** Исходный location ненайденной страницы (в адресной строке остается он, а не notFoundRoute) */
     originalLocation?: string;
+    /** Параметры страницы под модалкой или попапом (без их параметров): известны, если оверлей открыл роутер */
+    pageParams?: PageParams;
 
     constructor(structure: Page, pageId: string, params: PageParams) {
         this.structure = structure;
@@ -95,6 +97,7 @@ export class Route {
         const copy = new Route(this.structure.clone(), this.pageId, {...this.params});
         copy.uniqId = this.uniqId;
         copy.originalLocation = this.originalLocation;
+        copy.pageParams = this.pageParams && {...this.pageParams};
         return copy;
     }
 
