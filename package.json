@@ -5,7 +5,7 @@
   "types": "dist/index.d.ts",
   "jsnext:main": "src/index.ts",
   "scripts": {
-    "build": "tsc && ./node_modules/.bin/babel src --out-dir dist --extensions '.ts,.tsx'",
+    "build": "tsc && ./node_modules/.bin/babel src --out-dir dist --extensions '.ts,.tsx' --ignore 'src/**/*.spec.ts'",
     "npm:publish": "npm run build && npm publish"
   },
   "peerDependencies": {
